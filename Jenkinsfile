@@ -22,12 +22,14 @@ pipeline {
                     dir('HelloWorldFunction') {
                         bat 'npm install'
                         
-                        // Create a zip package manually excluding node_modules and tests
+                        // Use PowerShell to create a zip package manually excluding node_modules and tests
                         bat '''
-                        $files = Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch "(node_modules|tests)" }
-                        $zipFile = "../function.zip"
-                        if (Test-Path $zipFile) { Remove-Item $zipFile }
-                        $files | Compress-Archive -DestinationPath $zipFile
+                        powershell -Command "
+                            $files = Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '(node_modules|tests)' }
+                            $zipFile = '../function.zip'
+                            if (Test-Path $zipFile) { Remove-Item $zipFile }
+                            $files | Compress-Archive -DestinationPath $zipFile
+                        "
                         '''
                     }
                 }
