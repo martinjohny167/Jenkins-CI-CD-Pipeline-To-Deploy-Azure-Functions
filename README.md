@@ -1,129 +1,126 @@
-# 🚀 Jenkins CI/CD Pipeline to Deploy Azure Functions
+# Jenkins CI/CD Pipeline for Azure Functions
 
-## 🎯 Objective
+This repository contains a CI/CD pipeline implementation using Jenkins to automatically build, test, and deploy an Azure Function application. The pipeline is triggered by GitHub webhooks and manages the entire deployment process.
 
-This project sets up a full CI/CD pipeline using **Jenkins**, **GitHub**, and **Azure Functions**. The goal is to build, test, and deploy a simple "Hello, World!" Azure Function triggered via GitHub push events and automated through Jenkins.
+## Project Overview
 
----
+This project demonstrates a complete CI/CD workflow with the following components:
+- Simple "Hello World" Azure Function
+- GitHub repository integration with Jenkins via webhooks
+- Automated testing with at least 3 test cases
+- Deployment to Azure Functions
 
-## 🔧 Prerequisites
+## Prerequisites
 
-- Azure Account + CLI
-- GitHub Repository
-- Jenkins installed locally (`http://localhost:8080`)
-- Ngrok for GitHub webhook tunneling
-- Node.js and npm
-- Azure Function Tools and Core Tools (v4+)
+- Azure Account with access to Azure Functions
+- GitHub Account
+- Jenkins Server installation
+- Azure CLI configured on Jenkins server
+- Node.js/npm (or other package manager based on your function language)
+- ngrok for webhook setup (for local Jenkins instances)
 
----
+## Architecture
 
-## 🧪 Azure Function Code (Node.js)
+The pipeline follows this workflow:
+1. Code changes pushed to GitHub repository
+2. GitHub webhook triggers Jenkins pipeline
+3. Jenkins executes pipeline stages (Build → Test → Deploy)
+4. Azure Function is deployed to production environment
 
-**File**: `HelloWorldFunction/index.js`
+## Azure Function
 
-```javascript
-module.exports = async function (context, req) {
-    context.res = {
-        status: 200,
-        body: "Hello, World!"
-    };
-};
-🧪 Test Cases (Jest)
-File: tests/hello.test.js
+The repository includes a simple HTTP-triggered Azure Function that returns "Hello, World!" when invoked. The function is implemented in JavaScript and follows Azure Functions best practices.
 
-javascript
-Copy
-Edit
-const request = require('supertest');
-const app = require('../HelloWorldFunction');
+## Jenkins Pipeline
 
-describe('Hello World Function', () => {
-    test('returns status 200', async () => {
-        const res = await request(app).get('/');
-        expect(res.statusCode).toBe(200);
-    });
+The Jenkins pipeline is defined in the `Jenkinsfile` at the root of the repository. It consists of three main stages:
 
-    test('returns Hello, World!', async () => {
-        const res = await request(app).get('/');
-        expect(res.text).toBe("Hello, World!");
-    });
+### Build Stage
+- Installs dependencies 
+- Prepares the application for testing and deployment
 
-    test('should handle undefined routes gracefully', async () => {
-        const res = await request(app).get('/not-found');
-        expect([404, 200]).toContain(res.statusCode); // Depending on routing setup
-    });
-});
-🔨 Jenkinsfile (CI/CD Pipeline)
-groovy
-Copy
-Edit
-pipeline {
-    agent any
-    environment {
-        AZURE_CLIENT_ID = credentials('azure-client-id')
-        AZURE_CLIENT_SECRET = credentials('azure-client-secret')
-        AZURE_TENANT_ID = credentials('azure-tenant-id')
-        RESOURCE_GROUP = 'your-resource-group'
-        FUNCTION_APP_NAME = 'your-function-app-name'
-    }
-    stages {
-        stage('Build') {
-            steps {
-                echo 'Installing dependencies...'
-                sh 'npm install'
-            }
-        }
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-                sh 'npm test'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                echo 'Deploying to Azure Function...'
-                sh """
-                zip -r function.zip *
-                az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-                az functionapp deployment source config-zip --resource-group $RESOURCE_GROUP --name $FUNCTION_APP_NAME --src function.zip
-                """
-            }
-        }
-    }
-}
-🌐 GitHub Webhook Setup with Ngrok
-Start Jenkins: http://localhost:8080
+### Test Stage
+- Runs automated tests to ensure functionality
+- Validates HTTP response, status codes, and edge cases
+- Requires all tests to pass before proceeding to deployment
 
-Start Ngrok:
-ngrok http 8080
-Copy forwarding HTTPS URL, e.g., https://abc123.ngrok.io
+### Deploy Stage
+- Uses Azure CLI to authenticate and deploy to Azure Functions
+- Creates or updates the function app
+- Verifies successful deployment
 
-GitHub → Repo → Settings → Webhooks → Add:
+## Webhook Configuration
 
-bash
-Copy
-Edit
-Payload URL: https://abc123.ngrok.io/github-webhook/
-Content-Type: application/json
-Event Trigger: Just the push event
-✅ Testing the Pipeline
-Push any changes to the GitHub repo
+This project uses GitHub webhooks to automatically trigger the Jenkins pipeline whenever changes are pushed to the repository. ngrok is used to expose the local Jenkins server to the internet.
 
-Jenkins webhook triggers:
+## Test Cases
 
-✅ Build
+The test suite includes the following test cases:
+1. Basic HTTP response validation ("Hello, World!" message)
+2. HTTP status code verification (200 OK)
+3. Edge case handling
 
-✅ Test (3 automated Jest tests)
+## Setup Instructions
 
-✅ Deploy to Azure
+### 1. Azure Function Setup
+```bash
+# Create Function App in Azure
+az functionapp create --name <your-function-app-name> --resource-group <your-resource-group> --consumption-plan-location <location> --runtime <runtime> --storage-account <storage-account>
 
-Visit deployed function URL to verify
+# Deploy function manually first time (optional)
+func azure functionapp publish <your-function-app-name>
+```
 
-📝 Notes
-Jenkins is running locally on port 8080
+### 2. Jenkins Configuration
+```bash
+# Install necessary Jenkins plugins
+- GitHub Integration
+- Azure CLI
+- Pipeline
 
-Ngrok is used to tunnel Jenkins for webhook access
+# Configure GitHub webhook
+- Use ngrok to create public URL: ngrok http 8080
+- Add webhook in GitHub repo settings pointing to: https://<ngrok-url>/github-webhook/
+```
 
-Azure CLI is used for login & deployment
+### 3. Jenkins Credentials Setup
+```bash
+# Add Azure Service Principal credentials to Jenkins
+- AZURE_CLIENT_ID
+- AZURE_CLIENT_SECRET
+- AZURE_TENANT_ID
+- RESOURCE_GROUP
+- FUNCTION_APP_NAME
+```
 
-Secrets are managed via Jenkins credentials store
+### 4. Running the Pipeline
+The pipeline will automatically trigger when changes are pushed to the repository. Alternatively, you can manually trigger it from the Jenkins dashboard.
+
+## Repository Structure
+
+```
+├── host.json                # Azure Functions host configuration
+├── local.settings.json      # Local settings for function app
+├── package.json             # Node.js dependencies
+├── Jenkinsfile              # Jenkins pipeline definition
+├── HelloWorld/              # Azure Function code
+│   ├── function.json        # Function binding configuration
+│   └── index.js             # Function implementation
+├── tests/                   # Test suite
+│   └── hello.test.js        # Test cases
+└── README.md                # This file
+```
+
+## Troubleshooting
+
+Common issues and solutions:
+- **Jenkins cannot connect to GitHub**: Verify webhook URL and credentials
+- **Azure deployment fails**: Check Azure credentials and permissions
+- **Tests failing**: Ensure test environment is properly configured
+
+## Resources
+
+- [Azure Functions Documentation](https://docs.microsoft.com/en-us/azure/azure-functions/)
+- [Jenkins Documentation](https://www.jenkins.io/doc/)
+- [GitHub Webhooks](https://docs.github.com/en/developers/webhooks-and-events/webhooks)
+- [ngrok Documentation](https://ngrok.com/docs)
