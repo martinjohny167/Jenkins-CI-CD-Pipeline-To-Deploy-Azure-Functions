@@ -20,10 +20,10 @@ pipeline {
                 script {
                     echo 'Building the application...'
                     dir('HelloWorldFunction') {
-                        sh 'npm install'
+                        bat 'npm install'
                         
                         // Create a zip package for deployment
-                        sh 'zip -r ../function.zip . -x "node_modules/*" -x "tests/*"'
+                        bat 'powershell -Command "Compress-Archive -Path . -DestinationPath ../function.zip -Force -Exclude node_modules,tests"'
                     }
                 }
             }
@@ -35,10 +35,10 @@ pipeline {
                     echo 'Running tests...'
                     dir('HelloWorldFunction') {
                         // Install dev dependencies if not already included
-                        sh 'npm install --also=dev'
+                        bat 'npm install --also=dev'
                         
                         // Run the test suite
-                        sh 'npm test'
+                        bat 'npm test'
                     }
                 }
             }
@@ -50,12 +50,12 @@ pipeline {
                     echo 'Deploying to Azure...'
                     
                     // Login to Azure using service principal
-                    sh """
+                    bat """
                         az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
                     """
                     
                     // Deploy using the zip deployment method
-                    sh """
+                    bat """
                         az functionapp deployment source config-zip \
                         --resource-group $RESOURCE_GROUP \
                         --name $FUNCTION_APP_NAME \
@@ -63,7 +63,7 @@ pipeline {
                     """
                     
                     // Logout from Azure CLI
-                    sh """
+                    bat """
                         az logout
                     """
                 }
@@ -83,4 +83,4 @@ pipeline {
             echo 'Pipeline execution failed!'
         }
     }
-} 
+}
