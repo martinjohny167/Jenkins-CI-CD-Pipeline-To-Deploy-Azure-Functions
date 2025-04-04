@@ -23,14 +23,12 @@ pipeline {
                         bat 'npm install'
                         
                         // Use PowerShell to create a zip package manually excluding node_modules and tests
-                        bat '''
-                        powershell -Command "
-                            $files = Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '(node_modules|tests)' }
-                            $zipFile = '../function.zip'
-                            if (Test-Path $zipFile) { Remove-Item $zipFile }
-                            $files | Compress-Archive -DestinationPath $zipFile
-                        "
-                        '''
+                        powershell """
+                            \$files = Get-ChildItem -Recurse -File | Where-Object { \$.FullName -notmatch '(node_modules|tests)' }
+                            \$zipFile = '../function.zip'
+                            if (Test-Path \$zipFile) { Remove-Item \$zipFile }
+                            \$files | Compress-Archive -DestinationPath \$zipFile
+                        """
                     }
                 }
             }
@@ -55,12 +53,18 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying to Azure...'
-                    
+
+                    // Ensure Azure CLI is installed
+                    bat 'az --version'
+
                     // Login to Azure using service principal
                     bat """
                         az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
                     """
-                    
+
+                    // Check login status
+                    bat 'az account show'
+
                     // Deploy using the zip deployment method
                     bat """
                         az functionapp deployment source config-zip \
@@ -68,7 +72,7 @@ pipeline {
                         --name $FUNCTION_APP_NAME \
                         --src function.zip
                     """
-                    
+
                     // Logout from Azure CLI
                     bat """
                         az logout
