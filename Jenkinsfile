@@ -40,7 +40,7 @@ pipeline {
             steps {
                 script {
                     echo 'Running tests...'
-                    dir('HelloWorldFunction') {
+                    dir('HelloWorldFunction/tests') {
                         // Install dev dependencies if not already included
                         bat 'npm install --also=dev'
                         
