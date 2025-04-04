@@ -8,8 +8,8 @@ pipeline {
         AZURE_TENANT_ID = credentials('AZURE_TENANT_ID')
         RESOURCE_GROUP = credentials('RESOURCE_GROUP')
         FUNCTION_APP_NAME = credentials('FUNCTION_APP_NAME')
-        // Define Azure CLI path based on your system
-        AZURE_CLI_PATH = "C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2"
+        // Full path to Azure CLI executable - verified with "where az" command
+        AZ_PATH = "\"C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\""
     }
     
     tools {
@@ -56,11 +56,8 @@ pipeline {
                 script {
                     echo 'Deploying to Azure...'
                     
-                    // Add Azure CLI to PATH for this session
-                    bat 'SET PATH=%PATH%;%AZURE_CLI_PATH%'
-                    
-                    // Verify Azure CLI is available
-                    bat 'az --version'
+                    // Temporarily add Azure CLI to PATH for this session
+                    bat "SET PATH=%PATH%;${env.AZ_PATH}"
                     
                     // Login to Azure using service principal
                     withCredentials([
@@ -69,7 +66,7 @@ pipeline {
                         string(credentialsId: 'AZURE_TENANT_ID', variable: 'TENANT_ID')
                     ]) {
                         bat """
-                            az login --service-principal -u %CLIENT_ID% -p %CLIENT_SECRET% --tenant %TENANT_ID%
+                            ${env.AZ_PATH}\\az.cmd login --service-principal -u %CLIENT_ID% -p %CLIENT_SECRET% --tenant %TENANT_ID%
                         """
                     }
                     
@@ -79,13 +76,13 @@ pipeline {
                         string(credentialsId: 'FUNCTION_APP_NAME', variable: 'APP_NAME')
                     ]) {
                         bat """
-                            az functionapp deployment source config-zip --resource-group %RG% --name %APP_NAME% --src function.zip
+                            ${env.AZ_PATH}\\az.cmd functionapp deployment source config-zip --resource-group %RG% --name %APP_NAME% --src function.zip
                         """
                     }
                     
                     // Logout from Azure CLI
                     bat """
-                        az logout
+                        ${env.AZ_PATH}\\az.cmd logout
                     """
                 }
             }
