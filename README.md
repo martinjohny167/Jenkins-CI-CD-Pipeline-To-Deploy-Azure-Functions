@@ -17,12 +17,6 @@ This project sets up a full CI/CD pipeline using **Jenkins**, **GitHub**, and **
 
 ---
 
-## 📂 Project Structure
-
-. ├── HelloWorldFunction/ │ └── index.js ├── tests/ │ └── hello.test.js ├── Jenkinsfile ├── package.json └── README.md
-
----
-
 ## 🧪 Azure Function Code (Node.js)
 
 **File**: `HelloWorldFunction/index.js`
